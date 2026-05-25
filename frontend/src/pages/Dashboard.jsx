@@ -6,18 +6,24 @@ import toast from 'react-hot-toast';
 export default function Dashboard() {
     const [protocols, setProtocols] = useState([]);
     const [categories, setCategories] = useState([]);
+    
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isCatModalOpen, setIsCatModalOpen] = useState(false);
+    
     const [formData, setFormData] = useState({ title: '', description: '', category: '' });
+    const [catFormData, setCatFormData] = useState({ name: '', description: '' });
+    
     const navigate = useNavigate();
 
     const [nextPageUrl, setNextPageUrl] = useState(null);
     const [prevPageUrl, setPrevPageUrl] = useState(null);
     const [statusFilter, setStatusFilter] = useState('');
     const [categoryFilter, setCategoryFilter] = useState('');
+    const [dateFilter, setDateFilter] = useState(''); 
 
     useEffect(() => {
         fetchProtocols();
-    }, [statusFilter, categoryFilter]);
+    }, [statusFilter, categoryFilter, dateFilter]); 
 
     useEffect(() => {
         fetchCategories();
@@ -29,6 +35,7 @@ export default function Dashboard() {
             if (!url) {
                 if (statusFilter) fetchUrl += `status=${statusFilter}&`;
                 if (categoryFilter) fetchUrl += `category=${categoryFilter}&`;
+                if (dateFilter) fetchUrl += `created_at__date=${dateFilter}&`; 
             }
 
             const response = await api.get(fetchUrl);
@@ -49,6 +56,19 @@ export default function Dashboard() {
             setCategories(response.data.results || []);
         } catch (error) {
             toast.error("Erro ao carregar categorias.");
+        }
+    };
+
+    const handleCreateCategory = async (e) => {
+        e.preventDefault();
+        try {
+            await api.post('categories/', catFormData);
+            setIsCatModalOpen(false);
+            setCatFormData({ name: '', description: '' });
+            toast.success("Categoria criada com sucesso!");
+            fetchCategories(); 
+        } catch (error) {
+            toast.error("Erro ao criar categoria. Pode ser que o nome já exista.");
         }
     };
 
@@ -100,7 +120,7 @@ export default function Dashboard() {
     };
 
     return (
-        <div className="min-h-screen bg-slate-50 relative">
+        <div className="min-h-screen bg-slate-50 relative pb-10">
             <header className="bg-blue-900 text-white p-4 shadow-md flex justify-between items-center">
                 <h1 className="text-xl font-bold">AdviceFlow | Plantão</h1>
                 <button onClick={handleLogout} className="bg-blue-800 hover:bg-blue-700 px-4 py-2 rounded transition text-sm">
@@ -111,16 +131,24 @@ export default function Dashboard() {
             <main className="max-w-5xl mx-auto p-6">
                 <div className="flex justify-between items-center mb-6">
                     <h2 className="text-2xl font-semibold text-slate-800">Protocolos Ativos</h2>
-                    <button 
-                        onClick={() => setIsModalOpen(true)}
-                        className="bg-green-600 text-white px-4 py-2 rounded shadow hover:bg-green-700 transition"
-                    >
-                        + Novo Protocolo
-                    </button>
+                    <div className="space-x-2">
+                        <button 
+                            onClick={() => setIsCatModalOpen(true)}
+                            className="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700 transition"
+                        >
+                            + Nova Categoria
+                        </button>
+                        <button 
+                            onClick={() => setIsModalOpen(true)}
+                            className="bg-green-600 text-white px-4 py-2 rounded shadow hover:bg-green-700 transition"
+                        >
+                            + Novo Protocolo
+                        </button>
+                    </div>
                 </div>
 
-                <div className="flex space-x-4 mb-6 bg-white p-4 rounded-lg shadow-sm border border-slate-200">
-                    <div className="flex-1">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 bg-white p-4 rounded-lg shadow-sm border border-slate-200">
+                    <div>
                         <label className="block text-xs font-medium text-slate-500 mb-1">Filtrar por Status</label>
                         <select 
                             className="w-full p-2 border border-slate-300 rounded text-sm bg-white"
@@ -132,7 +160,7 @@ export default function Dashboard() {
                             <option value="EXECUTED">Executados</option>
                         </select>
                     </div>
-                    <div className="flex-1">
+                    <div>
                         <label className="block text-xs font-medium text-slate-500 mb-1">Filtrar por Categoria</label>
                         <select 
                             className="w-full p-2 border border-slate-300 rounded text-sm bg-white"
@@ -144,6 +172,15 @@ export default function Dashboard() {
                                 <option key={cat.id} value={cat.id}>{cat.name}</option>
                             ))}
                         </select>
+                    </div>
+                    <div>
+                        <label className="block text-xs font-medium text-slate-500 mb-1">Filtrar por Data de Criação</label>
+                        <input 
+                            type="date"
+                            className="w-full p-2 border border-slate-300 rounded text-sm bg-white"
+                            value={dateFilter}
+                            onChange={(e) => setDateFilter(e.target.value)}
+                        />
                     </div>
                 </div>
 
@@ -188,65 +225,69 @@ export default function Dashboard() {
                 </div>
             </main>
 
-            {/* --- MODAL DE CRIAÇÃO --- */}
             {isModalOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
                     <div className="bg-white rounded-lg shadow-xl w-full max-w-md overflow-hidden">
                         <div className="bg-blue-900 px-6 py-4 flex justify-between items-center">
                             <h3 className="text-white font-bold text-lg">Novo Protocolo Clínico</h3>
                             <button onClick={() => setIsModalOpen(false)} className="text-blue-200 hover:text-white">&times;</button>
                         </div>
-                        
                         <form onSubmit={handleCreateProtocol} className="p-6 space-y-4">
-                            <button 
-                                onClick={handleSimulatePatient}
-                                className="w-full bg-indigo-100 text-indigo-700 py-2 rounded text-sm font-medium hover:bg-indigo-200 transition border border-indigo-200"
-                            >
+                            <button type="button" onClick={handleSimulatePatient} className="w-full bg-indigo-100 text-indigo-700 py-2 rounded text-sm font-medium hover:bg-indigo-200 transition border border-indigo-200">
                                 ⚡ Autopreencher com Paciente Simulado
                             </button>
-
                             <div>
                                 <label className="block text-sm font-medium text-slate-700">Título</label>
-                                <input 
-                                    type="text" required
-                                    className="mt-1 block w-full p-2 border border-slate-300 rounded focus:ring-blue-500 focus:border-blue-500"
-                                    value={formData.title}
-                                    onChange={(e) => setFormData({...formData, title: e.target.value})}
-                                />
+                                <input type="text" required className="mt-1 block w-full p-2 border border-slate-300 rounded" value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} />
                             </div>
-
                             <div>
                                 <label className="block text-sm font-medium text-slate-700">Descrição</label>
-                                <textarea 
-                                    required rows="3"
-                                    className="mt-1 block w-full p-2 border border-slate-300 rounded focus:ring-blue-500 focus:border-blue-500"
-                                    value={formData.description}
-                                    onChange={(e) => setFormData({...formData, description: e.target.value})}
-                                ></textarea>
+                                <textarea required rows="3" className="mt-1 block w-full p-2 border border-slate-300 rounded" value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})}></textarea>
                             </div>
-
                             <div>
                                 <label className="block text-sm font-medium text-slate-700">Categoria</label>
-                                <select 
-                                    required
-                                    className="mt-1 block w-full p-2 border border-slate-300 rounded bg-white focus:ring-blue-500 focus:border-blue-500"
-                                    value={formData.category}
-                                    onChange={(e) => setFormData({...formData, category: e.target.value})}
-                                >
+                                <select required className="mt-1 block w-full p-2 border border-slate-300 rounded bg-white" value={formData.category} onChange={(e) => setFormData({...formData, category: e.target.value})}>
                                     <option value="">Selecione uma categoria...</option>
-                                    {categories.map(cat => (
-                                        <option key={cat.id} value={cat.id}>{cat.name}</option>
-                                    ))}
+                                    {categories.map(cat => (<option key={cat.id} value={cat.id}>{cat.name}</option>))}
                                 </select>
                             </div>
-
                             <div className="pt-4 flex justify-end space-x-3 border-t">
-                                <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded transition">
-                                    Cancelar
-                                </button>
-                                <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition shadow">
-                                    Salvar Protocolo
-                                </button>
+                                <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded">Cancelar</button>
+                                <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">Salvar Protocolo</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {isCatModalOpen && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                    <div className="bg-white rounded-lg shadow-xl w-full max-w-md overflow-hidden">
+                        <div className="bg-blue-900 px-6 py-4 flex justify-between items-center">
+                            <h3 className="text-white font-bold text-lg">Nova Categoria Hospitalar</h3>
+                            <button onClick={() => setIsCatModalOpen(false)} className="text-blue-200 hover:text-white">&times;</button>
+                        </div>
+                        <form onSubmit={handleCreateCategory} className="p-6 space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700">Nome da Categoria</label>
+                                <input 
+                                    type="text" required placeholder="Ex: Ala Psiquiátrica, UTI, Pediatria"
+                                    className="mt-1 block w-full p-2 border border-slate-300 rounded focus:ring-blue-500 focus:border-blue-500" 
+                                    value={catFormData.name} 
+                                    onChange={(e) => setCatFormData({...catFormData, name: e.target.value})} 
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700">Descrição (Opcional)</label>
+                                <textarea 
+                                    rows="2" className="mt-1 block w-full p-2 border border-slate-300 rounded focus:ring-blue-500 focus:border-blue-500" 
+                                    value={catFormData.description} 
+                                    onChange={(e) => setCatFormData({...catFormData, description: e.target.value})} 
+                                ></textarea>
+                            </div>
+                            <div className="pt-4 flex justify-end space-x-3 border-t">
+                                <button type="button" onClick={() => setIsCatModalOpen(false)} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded">Cancelar</button>
+                                <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">Criar Categoria</button>
                             </div>
                         </form>
                     </div>
