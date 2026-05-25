@@ -189,16 +189,29 @@ export default function Dashboard() {
                         <p className="text-slate-500">Nenhum protocolo encontrado com estes filtros.</p>
                     ) : (
                         protocols.map(protocol => (
-                            <div key={protocol.id} className={`p-4 rounded-lg shadow border-l-4 ${protocol.status === 'EXECUTED' ? 'bg-slate-100 border-slate-400' : 'bg-white border-blue-500'}`}>
+                            <div key={protocol.id} className={`p-4 rounded-lg shadow border-l-4 flex flex-col justify-between ${protocol.status === 'EXECUTED' ? 'bg-slate-100 border-slate-400' : 'bg-white border-blue-500'}`}>
                                 <div className="flex justify-between items-start">
-                                    <div>
+                                    <div className="flex-1 pr-4">
                                         <h3 className={`font-bold ${protocol.status === 'EXECUTED' ? 'line-through text-slate-500' : 'text-blue-900'}`}>{protocol.title}</h3>
                                         <p className="text-sm text-slate-600 mt-1">{protocol.description}</p>
-                                        <div className="mt-3 text-xs text-slate-500">
-                                            <p>De: Dr(a). {protocol.creator_name}</p>
+                                        
+                                        <div className="mt-4 pt-3 border-t border-slate-100 flex justify-between text-xs text-slate-500">
+                                            <div>
+                                                <p className="font-medium text-slate-700">De: Dr(a). {protocol.creator_name}</p>
+                                                {protocol.delegated_to_name && (
+                                                    <p className="text-indigo-600 mt-1">Para: {protocol.delegated_to_name}</p>
+                                                )}
+                                            </div>
+                                            <div className="text-right">
+                                                <p>Criado: {new Date(protocol.created_at).toLocaleDateString('pt-BR')}</p>
+                                                {protocol.status === 'EXECUTED' && (
+                                                    <p className="text-green-600 mt-1">Executado: {new Date(protocol.updated_at).toLocaleDateString('pt-BR')}</p>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
-                                    <button onClick={() => toggleStatus(protocol)} className={`px-3 py-1 rounded text-sm font-medium transition ${protocol.status === 'EXECUTED' ? 'bg-slate-300 text-slate-700 hover:bg-slate-400' : 'bg-blue-100 text-blue-700 hover:bg-blue-200'}`}>
+
+                                    <button onClick={() => toggleStatus(protocol)} className={`px-3 py-1 rounded text-sm font-medium transition whitespace-nowrap ${protocol.status === 'EXECUTED' ? 'bg-slate-300 text-slate-700 hover:bg-slate-400' : 'bg-blue-100 text-blue-700 hover:bg-blue-200'}`}>
                                         {protocol.status === 'EXECUTED' ? 'Reabrir' : 'Executar'}
                                     </button>
                                 </div>
