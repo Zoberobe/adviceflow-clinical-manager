@@ -1,7 +1,8 @@
-from rest_framework import viewsets, permissions
+from rest_framework import viewsets, permissions, generics
 from .models import Category, Protocol
-from .serializers import CategorySerializer, ProtocolSerializer
+from .serializers import CategorySerializer, ProtocolSerializer, UserSerializer
 from django.db.models import Q
+from django.contrib.auth.models import User 
 
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
@@ -18,3 +19,8 @@ class ProtocolViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(creator=self.request.user)
+
+class RegisterView(generics.CreateAPIView):
+    queryset = User.objects.all()
+    permission_classes = [permissions.AllowAny] 
+    serializer_class = UserSerializer
