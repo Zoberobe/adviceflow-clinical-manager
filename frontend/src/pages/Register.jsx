@@ -1,37 +1,33 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import api from '../services/api';
 
-export default function Login() {
+export default function Register() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
     const navigate = useNavigate();
 
-    const handleLogin = async (e) => {
+    const handleRegister = async (e) => {
         e.preventDefault();
         try {
-            const response = await api.post('token/', { username, password });
+            await api.post('register/', { username, password });
             
-            localStorage.setItem('access_token', response.data.access);
-            
-            navigate('/dashboard');
+            toast.success('Conta criada com sucesso! Por favor, faça o login.');
+            navigate('/login'); 
         } catch (err) {
-            setError('Credenciais inválidas. Tente novamente.');
+            toast.error('Erro ao criar conta. Usuário existente ou senha fraca.');
         }
     };
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-slate-100">
             <div className="bg-white p-8 rounded-lg shadow-md w-96">
-                <h1 className="text-2xl font-bold text-center text-blue-900 mb-6">AdviceFlow</h1>
-                <h2 className="text-center text-slate-500 mb-6">Portal de Acesso Clínico</h2>
-                
-                {error && <div className="bg-red-100 text-red-700 p-3 rounded mb-4 text-sm">{error}</div>}
-                
-                <form onSubmit={handleLogin} className="space-y-4">
+                <h1 className="text-2xl font-bold text-center text-blue-900 mb-2">AdviceFlow</h1>
+                <h2 className="text-center text-slate-500 mb-6">Cadastro de Novo Profissional</h2>                
+                <form onSubmit={handleRegister} className="space-y-4">
                     <div>
-                        <label className="block text-sm font-medium text-slate-700">Usuário</label>
+                        <label className="block text-sm font-medium text-slate-700">Novo Usuário</label>
                         <input 
                             type="text" 
                             className="mt-1 block w-full p-2 border border-slate-300 rounded focus:ring-blue-500 focus:border-blue-500"
@@ -52,17 +48,18 @@ export default function Login() {
                     </div>
                     <button 
                         type="submit" 
-                        className="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700 transition font-medium"
+                        className="w-full bg-green-600 text-white p-2 rounded hover:bg-green-700 transition font-medium"
                     >
-                        Entrar no Sistema
+                        Criar Minha Conta
                     </button>
-                    <div className="mt-6 text-center text-sm text-slate-600">
-                    Não tem uma conta?{' '}
-                    <Link to="/register" className="text-blue-600 font-medium hover:underline">
-                        Cadastre-se aqui
-                    </Link>
-                    </div>
                 </form>
+
+                <div className="mt-6 text-center text-sm text-slate-600">
+                    Já possui acesso?{' '}
+                    <Link to="/login" className="text-blue-600 font-medium hover:underline">
+                        Faça login aqui
+                    </Link>
+                </div>
             </div>
         </div>
     );
