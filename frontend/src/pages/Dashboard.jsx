@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import toast from 'react-hot-toast';
 
 export default function Dashboard() {
     const [protocols, setProtocols] = useState([]);
@@ -9,15 +10,31 @@ export default function Dashboard() {
     const [formData, setFormData] = useState({ title: '', description: '', category: '' });
     const navigate = useNavigate();
 
+    const [nextPageUrl, setNextPageUrl] = useState(null);
+    const [prevPageUrl, setPrevPageUrl] = useState(null);
+    const [statusFilter, setStatusFilter] = useState('');
+    const [categoryFilter, setCategoryFilter] = useState('');
+
     useEffect(() => {
         fetchProtocols();
+    }, [statusFilter, categoryFilter]);
+
+    useEffect(() => {
         fetchCategories();
     }, []);
 
-    const fetchProtocols = async () => {
+    const fetchProtocols = async (url = null) => {
         try {
-            const response = await api.get('protocols/');
-            setProtocols(response.data.results || []); 
+            let fetchUrl = url || 'protocols/?';
+            if (!url) {
+                if (statusFilter) fetchUrl += `status=${statusFilter}&`;
+                if (categoryFilter) fetchUrl += `category=${categoryFilter}&`;
+            }
+
+            const response = await api.get(fetchUrl);
+            setProtocols(response.data.results || []);
+            setNextPageUrl(response.data.next);
+            setPrevPageUrl(response.data.previous);
         } catch (error) {
             if (error.response?.status === 401) {
                 localStorage.removeItem('access_token');
@@ -31,7 +48,7 @@ export default function Dashboard() {
             const response = await api.get('categories/');
             setCategories(response.data.results || []);
         } catch (error) {
-            console.error("Erro ao buscar categorias", error);
+            toast.error("Erro ao carregar categorias.");
         }
     };
 
@@ -39,15 +56,17 @@ export default function Dashboard() {
         const newStatus = protocol.status === 'PENDING' ? 'EXECUTED' : 'PENDING';
         try {
             await api.patch(`protocols/${protocol.id}/`, { status: newStatus });
+            toast.success(`Protocolo marcado como ${newStatus === 'EXECUTED' ? 'Executado' : 'Pendente'}`);
             fetchProtocols();
         } catch (error) {
-            alert('Erro ao atualizar o status do protocolo.');
+            toast.error('Erro ao atualizar o status do protocolo.');
         }
     };
 
     const handleSimulatePatient = async (e) => {
         e.preventDefault();
         try {
+            toast.loading("Buscando paciente...", { id: "simulacao" });
             const response = await api.get('patients/random/');
             const patient = response.data;
             
@@ -56,8 +75,9 @@ export default function Dashboard() {
                 title: `Avaliação: ${patient.full_name}`,
                 description: `Paciente com ${patient.age} anos. Status clínico: ${patient.clinical_status}.`
             });
+            toast.success("Paciente simulado carregado!", { id: "simulacao" });
         } catch (error) {
-            alert("Erro ao buscar paciente simulado.");
+            toast.error("Erro ao buscar paciente simulado.", { id: "simulacao" });
         }
     };
 
@@ -66,10 +86,11 @@ export default function Dashboard() {
         try {
             await api.post('protocols/', formData);
             setIsModalOpen(false);
-            setFormData({ title: '', description: '', category: '' }); 
-            fetchProtocols(); 
+            setFormData({ title: '', description: '', category: '' });
+            toast.success("Novo protocolo criado com sucesso!");
+            fetchProtocols();
         } catch (error) {
-            alert('Erro ao criar protocolo. Verifique se selecionou uma categoria.');
+            toast.error('Erro ao criar protocolo. Verifique os dados.');
         }
     };
 
@@ -98,9 +119,37 @@ export default function Dashboard() {
                     </button>
                 </div>
 
+                <div className="flex space-x-4 mb-6 bg-white p-4 rounded-lg shadow-sm border border-slate-200">
+                    <div className="flex-1">
+                        <label className="block text-xs font-medium text-slate-500 mb-1">Filtrar por Status</label>
+                        <select 
+                            className="w-full p-2 border border-slate-300 rounded text-sm bg-white"
+                            value={statusFilter}
+                            onChange={(e) => setStatusFilter(e.target.value)}
+                        >
+                            <option value="">Todos os Status</option>
+                            <option value="PENDING">Pendentes</option>
+                            <option value="EXECUTED">Executados</option>
+                        </select>
+                    </div>
+                    <div className="flex-1">
+                        <label className="block text-xs font-medium text-slate-500 mb-1">Filtrar por Categoria</label>
+                        <select 
+                            className="w-full p-2 border border-slate-300 rounded text-sm bg-white"
+                            value={categoryFilter}
+                            onChange={(e) => setCategoryFilter(e.target.value)}
+                        >
+                            <option value="">Todas as Categorias</option>
+                            {categories.map(cat => (
+                                <option key={cat.id} value={cat.id}>{cat.name}</option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {protocols.length === 0 ? (
-                        <p className="text-slate-500">Nenhum protocolo encontrado no sistema.</p>
+                        <p className="text-slate-500">Nenhum protocolo encontrado com estes filtros.</p>
                     ) : (
                         protocols.map(protocol => (
                             <div key={protocol.id} className={`p-4 rounded-lg shadow border-l-4 ${protocol.status === 'EXECUTED' ? 'bg-slate-100 border-slate-400' : 'bg-white border-blue-500'}`}>
@@ -119,6 +168,23 @@ export default function Dashboard() {
                             </div>
                         ))
                     )}
+                </div>
+
+                <div className="flex justify-between items-center mt-8 pt-4 border-t border-slate-200">
+                    <button 
+                        onClick={() => fetchProtocols(prevPageUrl)}
+                        disabled={!prevPageUrl}
+                        className={`px-4 py-2 rounded text-sm font-medium ${prevPageUrl ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' : 'bg-slate-100 text-slate-400 cursor-not-allowed'}`}
+                    >
+                        &larr; Página Anterior
+                    </button>
+                    <button 
+                        onClick={() => fetchProtocols(nextPageUrl)}
+                        disabled={!nextPageUrl}
+                        className={`px-4 py-2 rounded text-sm font-medium ${nextPageUrl ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' : 'bg-slate-100 text-slate-400 cursor-not-allowed'}`}
+                    >
+                        Próxima Página &rarr;
+                    </button>
                 </div>
             </main>
 
