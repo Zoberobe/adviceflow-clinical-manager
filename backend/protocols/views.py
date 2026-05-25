@@ -71,3 +71,8 @@ class ProtocolViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(creator=self.request.user)
+
+class UserListView(generics.ListAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer 
+    permission_classes = [permissions.IsAuthenticated]

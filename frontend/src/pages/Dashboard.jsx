@@ -9,8 +9,16 @@ export default function Dashboard() {
     
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isCatModalOpen, setIsCatModalOpen] = useState(false);
+
+    const [users, setUsers] = useState([]);
     
-    const [formData, setFormData] = useState({ title: '', description: '', category: '' });
+    const [formData, setFormData] = useState({ 
+    title: '', 
+    description: '', 
+    category: '', 
+    delegated_to: ''
+    });
+
     const [catFormData, setCatFormData] = useState({ name: '', description: '' });
     
     const navigate = useNavigate();
@@ -27,6 +35,7 @@ export default function Dashboard() {
 
     useEffect(() => {
         fetchCategories();
+        fetchUsers();
     }, []);
 
     const fetchProtocols = async (url = null) => {
@@ -56,6 +65,15 @@ export default function Dashboard() {
             setCategories(response.data.results || []);
         } catch (error) {
             toast.error("Erro ao carregar categorias.");
+        }
+    };
+
+    const fetchUsers = async () => {
+        try {
+            const response = await api.get('users/');
+            setUsers(response.data.results || response.data); 
+        } catch (error) {
+            console.error("Erro ao buscar usuários");
         }
     };
 
@@ -262,6 +280,19 @@ export default function Dashboard() {
                                 <select required className="mt-1 block w-full p-2 border border-slate-300 rounded bg-white" value={formData.category} onChange={(e) => setFormData({...formData, category: e.target.value})}>
                                     <option value="">Selecione uma categoria...</option>
                                     {categories.map(cat => (<option key={cat.id} value={cat.id}>{cat.name}</option>))}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700">Delegar para (Opcional)</label>
+                                <select 
+                                    className="mt-1 block w-full p-2 border border-slate-300 rounded bg-white"
+                                    value={formData.delegated_to}
+                                    onChange={(e) => setFormData({...formData, delegated_to: e.target.value})}
+                                >
+                                    <option value="">Manter comigo (Privado)</option>
+                                    {users.map(user => (
+                                        <option key={user.id} value={user.id}>Dr(a). {user.username}</option>
+                                    ))}
                                 </select>
                             </div>
                             <div className="pt-4 flex justify-end space-x-3 border-t">
