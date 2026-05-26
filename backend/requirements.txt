@@ -5,3 +5,4 @@ psycopg2-binary
 django-filter
 pytest-django
 django-cors-headers
+python-dotenv

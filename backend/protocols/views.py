@@ -5,6 +5,7 @@ from django.db.models import Q
 from django.contrib.auth.models import User 
 from .models import Category, Protocol
 from .serializers import CategorySerializer, ProtocolSerializer, UserSerializer
+from .permissions import IsCreatorOrReadOnly
 
 from .services import PatientService 
 
@@ -15,7 +16,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
 
 class ProtocolViewSet(viewsets.ModelViewSet):
     serializer_class = ProtocolSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsCreatorOrReadOnly] 
     
     filterset_fields = {
         'status': ['exact'],
@@ -27,7 +28,9 @@ class ProtocolViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        return Protocol.objects.filter(Q(creator=user) | Q(delegated_to=user))
+        return Protocol.objects.filter(
+            Q(creator=user) | Q(delegated_to=user)
+        ).select_related('creator', 'delegated_to', 'category')
 
     def perform_create(self, serializer):
         serializer.save(creator=self.request.user)
