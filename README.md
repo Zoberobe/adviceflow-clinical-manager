@@ -1,5 +1,7 @@
 # 🏥 AdviceFlow - Clinical Task Manager
 
+**🟢 Live Demo (AWS EC2):** [http://54.20.64.160:5173](http://54.20.64.160:5173)
+
 AdviceFlow é uma aplicação web completa desenvolvida para a gestão eficiente de protocolos e tarefas em ambientes hospitalares. Médicos e enfermeiros podem criar, categorizar, delegar e rastrear tarefas clínicas com um alto grau de confiabilidade, segurança e usabilidade.
 
 ---
@@ -23,6 +25,7 @@ O projeto adota uma separação clara entre Frontend e Backend, seguindo rigoros
 **Infraestrutura e Deploy:**
 * **Docker e Docker Compose**
 * Integração Contínua (CI) via **GitHub Actions**
+* **Deploy Cloud:** Hospedado na AWS (Amazon Web Services) em uma instância EC2.
 
 ---
 
@@ -33,15 +36,26 @@ O projeto adota uma separação clara entre Frontend e Backend, seguindo rigoros
 **1. Clone o repositório:**
 ```bash
 git clone https://github.com/Zoberobe/adviceflow-clinical-manager
-cd adviceflow-clinical-task-manager
+cd adviceflow-clinical-manager
 ```
 
-**2. Suba os containers da aplicação:**
+**2. Configure as Variáveis de Ambiente:**
+Crie um arquivo `.env` na raiz do projeto contendo as seguintes credenciais:
+```env
+# Backend
+SECRET_KEY=sua_chave_secreta_aqui
+DEBUG=True
+
+# Frontend
+VITE_API_URL=http://localhost:8000
+```
+
+**3. Suba os containers da aplicação:**
 ```bash
 docker-compose up --build -d
 ```
 
-**3. Acesse a aplicação:**
+**4. Acesse a aplicação:**
 * **Frontend:** [http://localhost:5173](http://localhost:5173)
 * **Backend API:** [http://localhost:8000/api/](http://localhost:8000/api/)
 
@@ -65,3 +79,15 @@ docker-compose exec backend python manage.py createsuperuser
 * **Integração Externa Mockada e Isolada:** O consumo da API pública (`randomuser.me`) é feito de forma segura e elegante através da camada `PatientService`, garantindo responsabilidade única na `View` e testes totalmente previsíveis e rápidos.
 * **Performance Extrema (N+1 Resolvido):** O DRF foi ajustado com a função `.select_related()` para evitar que consultas de chaves estrangeiras saturem o banco de dados durante a renderização da listagem de protocolos.
 * **Segurança de JWT Avançada:** O frontend foca na melhor experiência do usuário: ele não desloga a conta bruscamente se o token de acesso expirar. A interceptação inteligente do Axios tenta comunicar com a rota de renovação (usando o *refresh_token*) de forma totalmente transparente e em segundo plano.
+
+---
+
+## ☁️ Deploy AWS
+
+A aplicação foi integralmente publicada na AWS usando instâncias EC2, demonstrando conhecimento full-stack e cloud. O ambiente remoto orquestra o banco de dados PostgreSQL, o backend Django e o frontend Vite (React) simultaneamente via containers Docker.
+
+Para testar ao vivo, acesse o link no topo deste README.
+
+
+> **⚠️ Nota de Auditoria de Segurança:**
+> Este repositório passou por uma auditoria de segurança rigorosa em maio de 2026 para remediar a exposição acidental de credenciais de infraestrutura. Todas as chaves expostas foram permanentemente revogadas e alteradas no ambiente de nuvem. O histórico de commits foi mantido para preservar a integridade e a transparência do processo de desenvolvimento.
