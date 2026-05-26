@@ -51,6 +51,7 @@ jobs:
         
     - name: Instalar Dependências do React (NPM)
       run: npm install
+      npm: install @rollup/rollup-linux-x64-gnu --no-save
       
     - name: Verificar Compilação (Build)
       run: npm run build
