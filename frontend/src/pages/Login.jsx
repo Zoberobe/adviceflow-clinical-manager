@@ -14,6 +14,7 @@ export default function Login() {
             const response = await api.post('token/', { username, password });
             
             localStorage.setItem('access_token', response.data.access);
+            localStorage.setItem('refresh_token', response.data.refresh); 
             
             navigate('/dashboard');
         } catch (err) {

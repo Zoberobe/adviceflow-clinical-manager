@@ -13,7 +13,39 @@ api.interceptors.request.use(
         return config;
     },
     (error) => {
-        return Promise.reject(error);
+        throw error;
+    }
+);
+
+api.interceptors.response.use(
+    (response) => {
+        return response; 
+    },
+    async (error) => {
+        const originalRequest = error.config;
+        
+        if (error.response && error.response.status === 401 && !originalRequest._retry) {
+            originalRequest._retry = true; 
+            
+            try {
+                const refreshToken = localStorage.getItem('refresh_token');
+                
+                const res = await axios.post('http://localhost:8000/api/token/refresh/', { 
+                    refresh: refreshToken 
+                });
+                
+                localStorage.setItem('access_token', res.data.access);
+                
+                originalRequest.headers['Authorization'] = `Bearer ${res.data.access}`;
+                return api(originalRequest);
+                
+            } catch (refreshError) {
+                localStorage.clear();
+                globalThis.location.href = '/login';
+                throw refreshError; 
+            }
+        }
+        throw error; 
     }
 );
 
